@@ -1,46 +1,22 @@
-const User = require('./user.model');
-const taskService = require('../tasks/task.service');
+const db = require('../../common/db');
 
-let users = [];
+const getAll = async () => db.getAllUsers();
+ 
+const get = async id => {
+  const user = await db.getUser(id);
 
-const getAllUsers = async () => {
-  return users;
+if (!user)
+{
+  throw new Error(`The user with id: ${id} was not found `);
+}
+return user;
 };
 
-const getUserById = async id => {
-  return users.find(user => user.id === id);
-};
 
-const createUser = async user => {
-  const newUser = new User(user);
-  users.push(newUser);
-  return newUser;
-};
+const create = async user => db.createUser(user);
 
-const updateUser = async (id, newUser) => {
-  const user = users.find(item => item.id === id);
-  if (user) {
-    user.name = newUser.name;
-    user.login = newUser.login;
-    user.password = newUser.password;
-    return user;
-  }
-  return users;
-};
+const update = async user => db.updateUser(user);
 
-const removeUser = async id => {
-  const isUserExist = users.find(item => item.id === id);
-  if (isUserExist) {
-    users = users.filter(user => user.id === id);
-    await taskService.nullTaskByUser(id);
-  }
-  return users;
-};
+const del = async id => db.delUser(id);
 
-module.exports = {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  removeUser
-};
+module.exports = { getAll, get, create, update, del };
