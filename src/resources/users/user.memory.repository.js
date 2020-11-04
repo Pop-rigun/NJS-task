@@ -1,51 +1,25 @@
-const { User } = require('./user.model');
-const { Task } = require('../tasks/task.model');
-const ObjectId = require('mongoose').Types.ObjectId;
+const DB = require('../../common/inmemory_db');
 
 const getAll = async () => {
-  return User.find({});
+  return DB.users;
 };
 
-const getById = async id => {
-  return User.findOne({ _id: id });
+const create = async user => {
+  DB.users.push(user);
 };
 
-const createUser = async user => {
-  const newUser = new User({
-    ...user
-  });
-  await newUser.save();
-
-  return newUser;
+const get = async id => {
+  return DB.users.find(u => u.id === id);
 };
 
-const updateUser = async (userId, userBody) => {
-  await User.updateOne(
-    { _id: userId },
-    {
-      $set: { ...userBody }
-    }
-  );
-
-  return User.findOne({ _id: userId });
+const update = async user => {
+  const index = DB.users.findIndex(u => u.id === user.id);
+  DB.users[index] = user;
+  return get(user.id);
 };
 
-const deleteUser = async userId => {
-  await Task.updateMany(
-    { userId: ObjectId(userId) },
-    {
-      $set: { userId: null }
-    }
-  );
-  await User.deleteOne({ _id: userId });
-
-  return null;
+const remove = async id => {
+  DB.users = DB.users.filter(u => u.id === id);
 };
 
-module.exports = {
-  getAll,
-  getById,
-  createUser,
-  updateUser,
-  deleteUser
-};
+module.exports = { getAll, create, getByID: get, update, remove };

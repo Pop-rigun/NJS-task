@@ -1,44 +1,25 @@
-const { Board } = require('./board.model');
-const { Task } = require('../tasks/task.model');
-const ObjectId = require('mongoose').Types.ObjectId;
+const DB = require('../../common/inmemory_db');
 
 const getAll = async () => {
-  return Board.find({});
+  return DB.boards;
 };
 
-const getById = async id => {
-  return Board.findOne({ _id: id });
+const create = async board => {
+  DB.boards.push(board);
 };
 
-const createBoard = async board => {
-  const newBoard = new Board({
-    ...board
-  });
-  await newBoard.save();
-  return newBoard;
+const get = async id => {
+  return DB.boards.find(b => b.id === id);
 };
 
-const updateBoard = async (boardId, boardBody) => {
-  await Board.updateOne(
-    { _id: boardId },
-    {
-      $set: { ...boardBody }
-    }
-  );
-
-  return Board.findOne({ _id: boardId });
+const update = async board => {
+  const index = DB.boards.findIndex(b => b.id === board.id);
+  DB.boards[index] = board;
+  return get(board.id);
 };
 
-const deleteBoard = async id => {
-  await Task.deleteMany({ boardId: ObjectId(id) });
-  await Board.deleteOne({ _id: id });
-  return null;
+const remove = async id => {
+  DB.boards = DB.boards.filter(b => b.id !== id);
 };
 
-module.exports = {
-  getAll,
-  getById,
-  createBoard,
-  updateBoard,
-  deleteBoard
-}
+module.exports = { getAll, create, get, update, remove };

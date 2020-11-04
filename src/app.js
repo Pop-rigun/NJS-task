@@ -3,24 +3,24 @@ const swaggerUI = require('swagger-ui-express');
 const path = require('path');
 const YAML = require('yamljs');
 const userRouter = require('./resources/users/user.router');
-const boardsRouter = require('./resources/boards/board.router');
-const { logger, errorHandler } = require('./utils/logger/logger');
+const boardRouter = require('./resources/boards/board.router');
+const authRouter = require('./resources/auth/auth.router');
+const { accessLogMiddleware } = require('./middleware/access.log.middleware');
 const {
-  promiseRejectHandler,
-  uncaughtExceptionHandler
-} = require('./utils/logger/logger');
+  errorHandlerMiddleware
+} = require('./middleware/error.handler.middleware');
+const { authMiddleware } = require('./middleware/auth.middleware');
 
 const app = express();
 const swaggerDocument = YAML.load(path.join(__dirname, '../doc/api.yaml'));
 
-process
-  .on('unhandledRejection', promiseRejectHandler)
-  .on('uncaughtException', uncaughtExceptionHandler);
-
 app.use(express.json());
 
-app.use('/doc', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+// logging
+app.use(accessLogMiddleware);
 
+// routes
+app.use('/doc', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 app.use('/', (req, res, next) => {
   if (req.originalUrl === '/') {
     res.send('Service is running!');
@@ -28,13 +28,22 @@ app.use('/', (req, res, next) => {
   }
   next();
 });
+app.use('/', authRouter);
 
-app.use(logger);
+app.use(authMiddleware);
 app.use('/users', userRouter);
-app.use('/boards', boardsRouter);
-app.use(errorHandler);
+app.use('/boards', boardRouter);
 
-// throw Error('throw Error!');
-// Promise.reject(Error('Promise.reject!'));
+// errors handling
+app.use(errorHandlerMiddleware);
+
+process.on('uncaughtException', err => {
+  console.error(`Caught exception: ${err}`);
+  throw err;
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.warn('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 module.exports = app;

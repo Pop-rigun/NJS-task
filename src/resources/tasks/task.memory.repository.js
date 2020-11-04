@@ -1,68 +1,41 @@
-const { Task } = require('./task.model');
-const ObjectId = require('mongoose').Types.ObjectId;
+const DB = require('../../common/inmemory_db');
+
+const getAll = async () => {
+  return DB.tasks;
+};
+
+const create = async task => {
+  DB.tasks.push(task);
+};
+
+const get = async id => {
+  return DB.tasks.find(u => u.id === id);
+};
 
 const getByBoardId = async boardId => {
-  return Task.find({ boardId: ObjectId(boardId) });
+  return DB.tasks.filter(t => t.boardId === boardId);
 };
 
-const getByBoardIdAndTaskId = async (boardId, taskId) => {
-  return Task.findOne({
-    _id: taskId,
-    boardId: ObjectId(boardId)
-  });
+const getByUserId = async userId => {
+  return DB.tasks.filter(t => t.userId === userId);
 };
 
-const createTask = async task => {
-  const newTask = new Task({
-    ...task
-  });
-  await newTask.save();
-  return newTask;
+const update = async task => {
+  const index = DB.tasks.findIndex(t => t.id === task.id);
+  DB.tasks[index] = task;
+  return get(task.id);
 };
 
-const updateTask = async (boardId, taskId, task) => {
-  const output = {};
-
-  if (task.title) {
-    output.title = task.title;
-  }
-  if (task.order) {
-    output.order = task.order;
-  }
-  if (task.description) {
-    output.description = task.description;
-  }
-  if (task.userId || task.userId === null) {
-    output.userId = task.userId;
-  }
-  if (task.boardId || task.boardId === null) {
-    output.boardId = task.boardId;
-  }
-  if (task.columnId || task.columnId === null) {
-    output.columnId = task.columnId;
-  }
-  await Task.updateOne(
-    { _id: taskId, boardId: ObjectId(boardId) },
-    {
-      $set: { ...output }
-    }
-  );
-
-  return Task.findOne({ _id: taskId });
-};
-
-const deleteTask = async (boardId, taskId) => {
-  await Task.deleteOne({
-    _id: taskId,
-    boardId: ObjectId(boardId)
-  });
-  return null;
+const remove = async id => {
+  DB.tasks = DB.tasks.filter(t => t.id !== id);
 };
 
 module.exports = {
+  getAll,
+  create,
+  get,
+  update,
+  remove,
   getByBoardId,
-  getByBoardIdAndTaskId,
-  createTask,
-  updateTask,
-  deleteTask
+  getByUserId
 };

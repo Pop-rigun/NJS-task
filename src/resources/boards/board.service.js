@@ -1,19 +1,32 @@
-const boardsRepo = require('./board.memory.repository');
+const { NotFoundError } = require('../../common/errors');
+const boardRepository = require('./board.repository');
+const taskService = require('../tasks/task.service');
 
-const getAll = () => boardsRepo.getAll();
+const getAll = async () => boardRepository.getAll();
 
-const getById = id => boardsRepo.getById(id);
+const create = async task => boardRepository.create(task);
 
-const createBoard = board => boardsRepo.createBoard(board);
-
-const updateBoard = (id, board) => boardsRepo.updateBoard(id, board);
-
-const deleteBoard = id => boardsRepo.deleteBoard(id);
-
-module.exports = {
-  getAll,
-  getById,
-  createBoard,
-  updateBoard,
-  deleteBoard
+const get = async id => {
+  const board = await boardRepository.get(id);
+  if (!board) {
+    throw new NotFoundError();
+  }
+  return board;
 };
+
+const update = async (id, options) => {
+  /* eslint-disable no-unused-vars*/
+  const { _id, ...rest } = options;
+  return boardRepository.update(id, rest);
+};
+
+const remove = async id => {
+  const boardTasks = await taskService.getByBoardId(id);
+  if (boardTasks) {
+    const promises = boardTasks.map(t => taskService.remove(t.id));
+    await Promise.all(promises);
+  }
+  return boardRepository.remove(id);
+};
+
+module.exports = { getAll, create, get, update, remove };
